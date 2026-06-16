@@ -3,13 +3,15 @@ from flask_cors import CORS
 from gemini_service import generate_maintenance_guide
 
 app = Flask(__name__)
+
+# Allow requests from frontend
 CORS(app)
 
 @app.route("/")
 def home():
     return jsonify({
-        "message": "Gym Maintenance AI backend is running",
-        "guide_url": "http://127.0.0.1:5000/generate-guide"
+        "success": True,
+        "message": "Gym Maintenance AI backend is running"
     })
 
 @app.route("/generate-guide", methods=["POST"])
@@ -17,9 +19,9 @@ def generate_guide():
 
     data = request.get_json(silent=True) or {}
 
-    equipment = str(data.get("equipmentName") or "").strip()
-    usage = str(data.get("usageFrequency") or "").strip()
-    notes = str(data.get("notes") or "").strip()
+    equipment = str(data.get("equipmentName", "")).strip()
+    usage = str(data.get("usageFrequency", "")).strip()
+    notes = str(data.get("notes", "")).strip()
 
     if not equipment or not usage:
         return jsonify({
@@ -33,22 +35,26 @@ def generate_guide():
             usage,
             notes
         )
+
+        return jsonify({
+            "success": True,
+            "result": ai_response
+        })
+
     except RuntimeError as error:
         return jsonify({
             "success": False,
             "error": str(error)
         }), 503
-    except Exception:
-        app.logger.exception("Failed to generate maintenance guide")
+
+    except Exception as error:
+        app.logger.exception("Guide generation failed")
+
         return jsonify({
             "success": False,
-            "error": "The AI service could not generate a guide. Please try again."
-        }), 502
+            "error": str(error)
+        }), 500
 
-    return jsonify({
-        "success": True,
-        "result": ai_response
-    })
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
