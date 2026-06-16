@@ -8,8 +8,22 @@ class GenerateGuideTests(unittest.TestCase):
     def setUp(self):
         self.client = app.test_client()
 
-    def test_requires_equipment_and_usage(self):
+    def test_requires_required_fields(self):
         response = self.client.post("/generate-guide", json={})
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["success"], False)
+
+    def test_rejects_invalid_usage_frequency(self):
+        response = self.client.post(
+            "/generate-guide",
+            json={
+                "customerName": "Alex",
+                "equipmentName": "Treadmill",
+                "usageFrequency": "Daily",
+                "notes": "Commercial gym",
+            },
+        )
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.get_json()["success"], False)
@@ -20,7 +34,7 @@ class GenerateGuideTests(unittest.TestCase):
             "cleaning": ["Wipe surfaces after use."],
             "maintenance": ["Check fasteners monthly."],
             "safety": ["Stop using damaged equipment."],
-            "service": ["Arrange service every six months."]
+            "service": ["Arrange service every six months."],
         }
 
         response = self.client.post(
@@ -28,9 +42,9 @@ class GenerateGuideTests(unittest.TestCase):
             json={
                 "customerName": "Alex",
                 "equipmentName": "Treadmill",
-                "usageFrequency": "Daily",
-                "notes": "Commercial gym"
-            }
+                "usageFrequency": "Heavy",
+                "notes": "Commercial gym",
+            },
         )
 
         self.assertEqual(response.status_code, 200)
@@ -38,15 +52,20 @@ class GenerateGuideTests(unittest.TestCase):
             response.get_json(),
             {
                 "success": True,
-                "customerName": "Alex",
-                "equipment": "Treadmill",
-                "usageFrequency": "Daily",
-                "notes": "Commercial gym",
-                "cleaning": ["Wipe surfaces after use."],
-                "maintenance": ["Check fasteners monthly."],
-                "safety": ["Stop using damaged equipment."],
-                "service": ["Arrange service every six months."]
-            }
+                "result": {
+                    "cleaning": ["Wipe surfaces after use."],
+                    "maintenance": ["Check fasteners monthly."],
+                    "safety": ["Stop using damaged equipment."],
+                    "service": ["Arrange service every six months."],
+                },
+            },
+        )
+
+        generate_guide.assert_called_once_with(
+            "Alex",
+            "Treadmill",
+            "Heavy",
+            "Commercial gym",
         )
 
 

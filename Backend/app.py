@@ -1,11 +1,19 @@
-from flask import Flask, jsonify, request
+import os
+
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
-from gemini_service import generate_maintenance_guide
+
+try:
+    from .gemini_service import generate_maintenance_guide
+    from .pdf_service import create_pdf
+except ImportError:
+    from gemini_service import generate_maintenance_guide
+    from pdf_service import create_pdf
 
 app = Flask(__name__)
 
-# Allow requests from frontend
-CORS(app)
+cors_origins = os.getenv("CORS_ORIGINS", "*")
+CORS(app, origins=[origin.strip() for origin in cors_origins.split(",")] if cors_origins != "*" else "*")
 
 @app.route("/")
 def home():
@@ -14,23 +22,45 @@ def home():
         "message": "Gym Maintenance AI backend is running"
     })
 
+@app.route("/health")
+def health():
+    return jsonify({
+        "success": True,
+        "status": "healthy",
+        "geminiConfigured": bool(os.getenv("GEMINI_API_KEY"))
+    })
+
 @app.route("/generate-guide", methods=["POST"])
 def generate_guide():
+    if not request.is_json:
+        return jsonify({
+            "success": False,
+            "error": "Request body must be valid JSON"
+        }), 400
 
     data = request.get_json(silent=True) or {}
 
+    customer = str(data.get("customerName", "")).strip()
     equipment = str(data.get("equipmentName", "")).strip()
     usage = str(data.get("usageFrequency", "")).strip()
     notes = str(data.get("notes", "")).strip()
+    allowed_usage = {"Light", "Moderate", "Heavy"}
 
-    if not equipment or not usage:
+    if not customer or not equipment or not usage:
         return jsonify({
             "success": False,
-            "error": "equipmentName and usageFrequency are required"
+            "error": "customerName, equipmentName, and usageFrequency are required"
+        }), 400
+
+    if usage not in allowed_usage:
+        return jsonify({
+            "success": False,
+            "error": "usageFrequency must be Light, Moderate, or Heavy"
         }), 400
 
     try:
         ai_response = generate_maintenance_guide(
+            customer,
             equipment,
             usage,
             notes
@@ -50,6 +80,45 @@ def generate_guide():
     except Exception as error:
         app.logger.exception("Guide generation failed")
 
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 500
+
+@app.route("/generate-pdf", methods=["POST"])
+@app.route("/download-pdf", methods=["POST"])
+@app.route("/api/generate-pdf", methods=["POST"])
+@app.route("/api/download-pdf", methods=["POST"])
+def generate_pdf():
+    if not request.is_json:
+        return jsonify({
+            "success": False,
+            "error": "Request body must be valid JSON"
+        }), 400
+
+    data = request.get_json(silent=True) or {}
+    if not data.get("customerName") or not (data.get("equipmentName") or data.get("equipment")):
+        return jsonify({
+            "success": False,
+            "error": "customerName and equipmentName are required to generate a PDF"
+        }), 400
+
+    try:
+        pdf_buffer = create_pdf(data)
+
+        equipment_name = str(
+            data.get("equipmentName") or data.get("equipment") or "maintenance"
+        ).replace(" ", "_").lower()
+        filename = f"{equipment_name}_guide.pdf"
+
+        return send_file(
+            pdf_buffer,
+            as_attachment=True,
+            download_name=filename,
+            mimetype="application/pdf"
+        )
+    except Exception as error:
+        app.logger.exception("PDF generation failed")
         return jsonify({
             "success": False,
             "error": str(error)
