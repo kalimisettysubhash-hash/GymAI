@@ -1,5 +1,5 @@
 const LOCAL_API_BASE_URL = "http://127.0.0.1:5000";
-const CHAT_API_URL = "https://gymai-7r7j.onrender.com/chat";
+const PROD_API_BASE_URL = "https://gymai-7r7j.onrender.com";
 
 export function getApiBaseUrl() {
   const configuredUrl = import.meta.env.VITE_API_BASE_URL?.trim();
@@ -20,7 +20,7 @@ export function getApiBaseUrl() {
     return LOCAL_API_BASE_URL;
   }
 
-  return "";
+  return PROD_API_BASE_URL;
 }
 
 export function getApiUrl(path) {
@@ -56,7 +56,7 @@ export async function readJsonResponse(response) {
 
 export async function askAssistant(question) {
   try {
-    const response = await fetch(CHAT_API_URL, {
+    const response = await apiFetch("/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ question }),
@@ -71,7 +71,8 @@ export async function askAssistant(question) {
     return data.answer;
   } catch (error) {
     throw new Error(
-      error.message || "Unable to reach the AI assistant. Please try again."
+      error.message || "Unable to reach the AI assistant. Please try again.",
+      { cause: error }
     );
   }
 }

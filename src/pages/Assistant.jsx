@@ -1,7 +1,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
-
-const CHAT_API_URL = "https://gymai-7r7j.onrender.com/chat";
+import { askAssistant } from "../lib/api";
 
 const starterPrompts = [
   "How often should I clean a treadmill?",
@@ -42,25 +41,11 @@ function Assistant() {
     setLoading(true);
 
     try {
-      const response = await fetch(CHAT_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ question }),
-      });
-
-      const data = await response.json().catch(() => null);
-
-      if (!response.ok || !data?.success) {
-        throw new Error(
-          data?.error || "The AI assistant could not answer right now."
-        );
-      }
+      const answer = await askAssistant(question);
 
       setMessages((currentMessages) => [
         ...currentMessages,
-        createMessage("ai", data.answer),
+        createMessage("ai", answer),
       ]);
     } catch (apiError) {
       const fallbackMessage =
