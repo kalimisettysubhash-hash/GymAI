@@ -2,18 +2,20 @@ import os
 
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
-
 try:
-    from .gemini_service import generate_maintenance_guide
+    from .gemini_service import ask_ai_assistant, generate_maintenance_guide
     from .pdf_service import create_pdf
 except ImportError:
-    from gemini_service import generate_maintenance_guide
+    from gemini_service import ask_ai_assistant, generate_maintenance_guide
     from pdf_service import create_pdf
 
 app = Flask(__name__)
 
-cors_origins = os.getenv("CORS_ORIGINS", "*")
-CORS(app, origins=[origin.strip() for origin in cors_origins.split(",")] if cors_origins != "*" else "*")
+CORS(
+    app,
+    resources={r"/*": {"origins": "*"}},
+    supports_credentials=True
+)
 
 @app.route("/")
 def home():
@@ -29,6 +31,51 @@ def health():
         "status": "healthy",
         "geminiConfigured": bool(os.getenv("GEMINI_API_KEY"))
     })
+
+@app.route("/chat", methods=["GET", "POST"])
+@app.route("/chat/", methods=["GET", "POST"])
+def chat():
+    if request.method == "GET":
+        return jsonify({
+            "success": True,
+            "message": "Send a POST request with JSON: {\"question\": \"...\"}"
+        })
+
+    if not request.is_json:
+        return jsonify({
+            "success": False,
+            "error": "Request body must be valid JSON"
+        }), 400
+
+    data = request.get_json(silent=True) or {}
+    question = str(data.get("question", "")).strip()
+
+    if not question:
+        return jsonify({
+            "success": False,
+            "error": "Question is required"
+        }), 400
+
+    try:
+        answer = ask_ai_assistant(question)
+    except RuntimeError as error:
+        app.logger.warning("AI assistant request failed: %s", error)
+        return jsonify({
+            "success": False,
+            "error": str(error)
+        }), 503
+    except Exception:
+        app.logger.exception("Unexpected AI assistant error")
+        return jsonify({
+            "success": False,
+            "error": "The AI assistant could not answer right now. Please try again shortly."
+        }), 500
+
+    return jsonify({
+        "success": True,
+        "answer": answer
+    })
+
 
 @app.route("/generate-guide", methods=["POST"])
 def generate_guide():

@@ -1,12 +1,22 @@
-﻿@tailwind base;
+@tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: #000;
+}
+
 .glow-card {
   transition: all 0.3s ease;
 }
 
 .glow-card:hover {
   box-shadow:
-    0 0 20px rgba(59,130,246,0.2),
-    0 0 40px rgba(59,130,246,0.15);
+    0 0 20px rgba(59, 130, 246, 0.2),
+    0 0 40px rgba(124, 58, 237, 0.16);
 }

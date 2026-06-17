@@ -1,62 +1,59 @@
-import {
-  FaRobot,
-  FaHistory,
-  FaShieldAlt,
-} from "react-icons/fa";
+import { motion } from "framer-motion";
+import { FaCalendarCheck, FaFilePdf, FaRobot } from "react-icons/fa";
+
+const features = [
+  {
+    icon: <FaRobot />,
+    title: "AI Powered Recommendations",
+    desc: "Generate practical cleaning, maintenance, safety, and service tasks from equipment details.",
+  },
+  {
+    icon: <FaFilePdf />,
+    title: "PDF Export",
+    desc: "Download a professional maintenance guide that can be shared with staff or clients.",
+  },
+  {
+    icon: <FaCalendarCheck />,
+    title: "Maintenance Scheduling",
+    desc: "Receive service timing guidance based on light, moderate, or heavy usage patterns.",
+  },
+];
 
 const Features = () => {
   return (
-    <section id="services" className="py-24 px-6">
-      <div className="max-w-6xl mx-auto">
-
-        <h2 className="text-4xl font-bold text-center mb-14">
-          Why Use GymAI?
-        </h2>
-
-        <div className="grid md:grid-cols-3 gap-8">
-
-          <FeatureCard
-            icon={<FaRobot />}
-            title="AI Generated Tips"
-            desc="Get intelligent maintenance suggestions instantly."
-          />
-
-          <FeatureCard
-            icon={<FaHistory />}
-            title="History Tracking"
-            desc="Access previous maintenance guides anytime."
-          />
-
-          <FeatureCard
-            icon={<FaShieldAlt />}
-            title="Safety First"
-            desc="Receive equipment safety recommendations."
-          />
-
+    <section className="px-6 py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="mx-auto mb-12 max-w-2xl text-center">
+          <p className="mb-3 font-semibold text-blue-300">Features</p>
+          <h2 className="text-4xl font-bold text-white md:text-5xl">Built for Gym Operations</h2>
         </div>
 
+        <div className="grid gap-6 md:grid-cols-3">
+          {features.map((feature, index) => (
+            <FeatureCard key={feature.title} {...feature} index={index} />
+          ))}
+        </div>
       </div>
     </section>
   );
 };
 
-function FeatureCard({ icon, title, desc }) {
+function FeatureCard({ icon, title, desc, index }) {
   return (
-    <div className="glow-card bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center hover:scale-105 transition">
-
-      <div className="text-blue-400 text-4xl mb-4">
+    <motion.article
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.45, delay: index * 0.08 }}
+      whileHover={{ y: -8 }}
+      className="glow-card rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-xl"
+    >
+      <div className="mb-6 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-blue-500/20 to-violet-500/20 text-2xl text-blue-300">
         {icon}
       </div>
-
-      <h3 className="text-xl font-semibold mb-3 text-white">
-        {title}
-      </h3>
-
-      <p className="text-gray-400">
-        {desc}
-      </p>
-
-    </div>
+      <h3 className="mb-3 text-xl font-semibold text-white">{title}</h3>
+      <p className="leading-7 text-gray-400">{desc}</p>
+    </motion.article>
   );
 }
 

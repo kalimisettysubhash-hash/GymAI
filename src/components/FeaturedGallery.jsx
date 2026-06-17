@@ -1,6 +1,6 @@
 import { useState } from "react";
 import Lightbox from "yet-another-react-lightbox";
-import { galleryData } from "../data/galleryData";
+import { galleryData } from "../data/galleryData"; // Assuming galleryData is correctly structured
 import fallbackImg from "../assets/200533.jpg";
 
 function FeaturedGallery() {

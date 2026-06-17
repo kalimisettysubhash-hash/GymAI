@@ -13,31 +13,22 @@ const Generator = () => {
   }, [guide]);
 
   const handleGenerateGuide = (apiGuide, formData) => {
-    const usage = formData.usageFrequency || 'regular';
-    const equipment = apiGuide.equipment || formData.equipmentName || 'Equipment';
-
     const nextGuide = {
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
-      customerName: formData.customerName || 'Valued Customer',
-      equipment,
-      usageFrequency: usage,
-      notes: formData.notes || 'No additional notes provided.',
-      cleaning: apiGuide.cleaning || [
-        `Wipe the ${equipment} after every use to remove dust and sweat.`,
-        `Inspect and clean moving parts at least once a ${usage === 'Daily' ? 'week' : 'month'}.`,
-      ],
-      maintenance: apiGuide.maintenance || [
-        'Check fasteners and adjust tension as needed every 30 days.',
-        'Lubricate components and inspect belts or rollers for wear.',
-      ],
-      safety: apiGuide.safety || [
-        "Always follow the manufacturer's safety guidelines.",
-        'Keep the area clear of obstructions and never overload the machine.',
-      ],
-      service: apiGuide.service || [
-        'Schedule professional servicing every 6 months or sooner for heavy use.',
-      ],
+      generatedDate: new Date().toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+      customerName: formData.customerName,
+      equipmentName: formData.equipmentName,
+      usageFrequency: formData.usageFrequency,
+      notes: formData.notes,
+      cleaning: apiGuide.cleaning,
+      maintenance: apiGuide.maintenance,
+      safety: apiGuide.safety,
+      service: apiGuide.service,
     };
 
     setGuide(nextGuide);
@@ -54,8 +45,8 @@ const Generator = () => {
   return (
     <div className="px-6 py-16">
       <div className="max-w-5xl mx-auto text-center mb-12">
-        <p className="text-blue-400 font-semibold mb-3">Page 2</p>
-        <h1 className="text-4xl md:text-5xl font-bold mb-4">AI Guide Generator</h1>
+        <p className="text-blue-300 font-semibold mb-3">AI Guide Generator</p>
+        <h1 className="text-4xl md:text-5xl font-bold mb-4">Generate a Maintenance Guide</h1>
         <p className="text-gray-400 max-w-2xl mx-auto">
           Create a professional cleaning, maintenance, safety, and service plan for any gym equipment.
         </p>

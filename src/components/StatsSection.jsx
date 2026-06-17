@@ -1,66 +1,30 @@
 import { motion } from "framer-motion";
 
 const stats = [
-  {
-    type: "numerical",
-    number: 500,
-    suffix: "+",
-    title: "Guides Generated",
-  },
-  {
-    type: "numerical",
-    number: 98,
-    suffix: "%",
-    title: "Accuracy",
-  },
-  {
-    type: "numerical",
-    number: 50,
-    suffix: "+",
-    title: "Equipment Types",
-  },
-  {
-    type: "descriptive",
-    title: "AI Powered",
-    description: "Maintenance Assistant",
-  },
-  {
-    type: "descriptive",
-    title: "PDF Export",
-    description: "Supported",
-  },
+  { value: "500+", title: "Guides Generated" },
+  { value: "AI", title: "Powered" },
+  { value: "PDF", title: "Supported" },
 ];
 
 const StatsSection = () => {
   return (
-    <section id="about" className="py-20 px-6">
-      <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
-
-        {stats.map((item, index) => (
+    <section className="px-6 py-12">
+      <div className="mx-auto grid max-w-6xl gap-6 md:grid-cols-3">
+        {stats.map((item) => (
           <motion.div
-            key={index}
+            key={item.title}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
             whileHover={{ y: -10 }}
-            className="glow-card bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 text-center"
+            className="glow-card rounded-2xl border border-white/10 bg-white/5 p-8 text-center backdrop-blur-xl"
           >
-            {item.type === "numerical" ? (
-              <h2 className="text-4xl font-bold text-yellow-400">
-                {item.number}{item.suffix}
-              </h2>
-            ) : (
-              <>
-                <h2 className="text-4xl font-bold text-blue-400">
-                  {item.title}
-                </h2>
-                <p className="text-gray-300 mt-3">{item.description}</p>
-              </>
-            )}
-
-            <p className="text-gray-300 mt-3">
-              {item.title}
-            </p>
+            <h2 className="bg-gradient-to-r from-blue-300 to-violet-300 bg-clip-text text-5xl font-bold text-transparent">
+              {item.value}
+            </h2>
+            <p className="mt-3 font-medium text-gray-300">{item.title}</p>
           </motion.div>
         ))}
-
       </div>
     </section>
   );

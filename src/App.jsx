@@ -1,9 +1,11 @@
 import { motion, useScroll } from "framer-motion";
 import { Route, Routes } from "react-router-dom";
-import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import Navbar from "./components/Navbar";
 import PageWrapper from "./components/PageWrapper";
+import ScrollToHash from "./components/ScrollToHash";
 import About from "./pages/About";
+import Assistant from "./pages/Assistant";
 import Generator from "./pages/Generator";
 import History from "./pages/History";
 import Home from "./pages/Home";
@@ -13,13 +15,13 @@ function App() {
   const { scrollYProgress } = useScroll();
 
   return (
-    <div className="bg-black min-h-screen text-white overflow-x-hidden">
-      <div className="fixed top-20 left-10 w-72 h-72 bg-blue-500/20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="fixed bottom-20 right-10 w-72 h-72 bg-violet-500/20 rounded-full blur-3xl animate-pulse"></div>
-      <div className="fixed top-1/2 left-1/2 w-96 h-96 bg-violet-500/10 rounded-full blur-3xl"></div>
+    <div className="min-h-screen overflow-x-hidden bg-black text-white">
+      <ScrollToHash />
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(37,99,235,0.24),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(124,58,237,0.22),transparent_32%)]" />
+      <div className="fixed inset-0 -z-10 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:72px_72px]" />
 
       <motion.div
-        className="fixed top-0 left-0 right-0 h-1 bg-blue-500 z-[999]"
+        className="fixed left-0 right-0 top-0 z-[999] h-1 bg-blue-500"
         style={{
           scaleX: scrollYProgress,
           transformOrigin: "0%",
@@ -32,6 +34,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/generator" element={<Generator />} />
+          <Route path="/assistant" element={<Assistant />} />
           <Route path="/history" element={<History />} />
           <Route path="/about" element={<About />} />
           <Route path="*" element={<NotFound />} />

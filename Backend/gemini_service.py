@@ -82,3 +82,37 @@ short recommendation."""
     }
 
     return guide
+
+
+def ask_ai_assistant(question):
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        raise RuntimeError("The AI assistant is not configured yet. Please try again later.")
+
+    client = genai.Client(api_key=api_key)
+
+    prompt = f"""You are a professional Gym Equipment Maintenance Assistant.
+
+Answer clearly and simply. Keep the answer practical, safe, and focused on gym
+equipment cleaning, inspection, maintenance, troubleshooting, or service
+scheduling. If the question is outside gym equipment maintenance, politely guide
+the user back to equipment care.
+
+Question:
+{question}
+"""
+
+    try:
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt
+        )
+    except Exception as error:
+        raise RuntimeError(
+            "The AI assistant is temporarily unavailable. Please try again in a moment."
+        ) from error
+
+    if not response.text:
+        raise RuntimeError("The AI assistant returned an empty answer. Please try again.")
+
+    return response.text.strip()

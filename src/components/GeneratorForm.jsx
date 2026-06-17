@@ -1,77 +1,49 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
+import { useState } from "react";
+import { FaMagic } from "react-icons/fa";
+import { apiFetch, readJsonResponse } from "../lib/api";
 
+const initialFormData = {
+  customerName: "",
+  equipmentName: "",
+  usageFrequency: "",
+  notes: "",
+};
 
-const API_BASE_URL = "https://gymai-7r7j.onrender.com";
 const GeneratorForm = ({ onGenerate }) => {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
-  const [formData, setFormData] = useState({
-    customerName: "",
-    equipmentName: "",
-    usageFrequency: "",
-    notes: "",
-  });
+  const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
 
-  const generateGuide = async () => {
-    const { customerName, equipmentName, usageFrequency, notes } = formData;
-
-    const response = await fetch(`${API_BASE_URL}/generate-guide`, {
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-      },
-
-      body: JSON.stringify({
-        customerName,
-        equipmentName,
-        usageFrequency,
-        notes,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.error || `Request failed with status ${response.status}`
-      );
-    }
-
-    const data = await response.json();
-
-    console.log("Gemini Response:", data);
-
-    if (!data.success) {
-      throw new Error(data.error || "The backend returned an invalid response.");
-    }
-
-    return data;
-  };
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    setErrors((prev) => ({ ...prev, [e.target.name]: "" }));
+  const handleChange = (event) => {
+    const { name, value } = event.target;
+    setFormData((current) => ({ ...current, [name]: value }));
+    setErrors((current) => ({ ...current, [name]: "" }));
     setApiError("");
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const validate = () => {
+    const nextErrors = {};
 
-    const newErrors = {};
+    if (!formData.customerName.trim()) {
+      nextErrors.customerName = "Please enter customer name.";
+    }
+
     if (!formData.equipmentName.trim()) {
-      newErrors.equipmentName = "Please enter equipment name.";
-    }
-    if (!formData.usageFrequency) {
-      newErrors.usageFrequency = "Please select usage frequency.";
+      nextErrors.equipmentName = "Please enter equipment name.";
     }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    if (!formData.usageFrequency) {
+      nextErrors.usageFrequency = "Please select usage frequency.";
+    }
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
+  };
+
+  const submitGuide = async () => {
+    if (!validate()) {
       return;
     }
 
@@ -79,138 +51,130 @@ const GeneratorForm = ({ onGenerate }) => {
     setApiError("");
 
     try {
-      const data = await generateGuide();
-      const { customerName, equipmentName, usageFrequency, notes } = formData;
-      const generatedGuide = {
-        customerName,
-        equipment: equipmentName,
-        usageFrequency,
-        notes,
-        generatedAt: new Date().toLocaleString(), // Add generatedAt timestamp
-        cleaning: data.result.cleaning,
-        maintenance: data.result.maintenance,
-        safety: data.result.safety,
-        service: data.result.service,
-      };
+      const response = await apiFetch("/generate-guide", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
 
-      console.log("Cleaning:", data.result.cleaning);
-      console.log("Maintenance:", data.result.maintenance);
-      console.log("Safety:", data.result.safety);
-      console.log("Service:", data.result.service);
+      const data = await readJsonResponse(response);
 
-      if (onGenerate) {
-        onGenerate(generatedGuide, formData);
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || "Unable to generate guide. Please try again.");
       }
+
+      onGenerate?.(data.result, formData);
     } catch (error) {
-      console.error("Error:", error);
-      setApiError("Unable to generate guide.\nPlease try again.");
+      setApiError(error.message || "Unable to generate guide. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    await submitGuide();
+  };
+
   return (
     <motion.section
-      id="generator"
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.7 }}
+      initial={{ opacity: 0, y: 28 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55 }}
     >
-      <div className="max-w-3xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.7 }}
-          className="glow-card bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-8 md:p-12"
-        >
-          <div className="flex justify-center mb-6">
-            <span className="px-4 py-2 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 text-sm">
-              AI Powered Generator
-            </span>
-          </div>
-
-          <h2 className="text-4xl font-bold text-white text-center mb-3">
-            Generate Maintenance Guide
-          </h2>
-
-          <p className="text-gray-400 text-center mb-10">
-            Enter equipment details and let AI generate a professional maintenance guide.
-          </p>
-
+      <div className="mx-auto max-w-3xl">
+        <div className="glow-card rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-xl md:p-10">
           <form onSubmit={handleSubmit} className="space-y-6">
+            <FieldError message={errors.customerName} />
             <input
               type="text"
               name="customerName"
               placeholder="Customer Name"
               value={formData.customerName}
               onChange={handleChange}
-              className="w-full p-4 rounded-xl bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-blue-500"
+              className="w-full rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400"
             />
 
+            <FieldError message={errors.equipmentName} />
             <input
               type="text"
               name="equipmentName"
               placeholder="Equipment Name"
               value={formData.equipmentName}
               onChange={handleChange}
-              className="w-full p-4 rounded-xl bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-blue-500"
+              className="w-full rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400"
             />
-            {errors.equipmentName && (
-              <p className="text-red-400 text-sm mt-2">{errors.equipmentName}</p>
-            )}
 
+            <FieldError message={errors.usageFrequency} />
             <select
               name="usageFrequency"
               value={formData.usageFrequency}
               onChange={handleChange}
-              className="w-full p-4 rounded-xl bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-blue-500"
+              className="w-full rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none transition focus:border-blue-400"
             >
-              <option value="">Select Usage Frequency</option>
-              <option>Daily</option>
-              <option>Weekly</option>
-              <option>Monthly</option>
-              <option>Heavy Use</option>
-              <option>Light Use</option>
+              <option value="">Usage Frequency</option>
+              <option value="Light">Light</option>
+              <option value="Moderate">Moderate</option>
+              <option value="Heavy">Heavy</option>
             </select>
-            {errors.usageFrequency && (
-              <p className="text-red-400 text-sm mt-2">{errors.usageFrequency}</p>
-            )}
 
             <textarea
-              rows="4"
+              rows="5"
               name="notes"
-              placeholder="Additional Notes..."
+              placeholder="Additional Notes"
               value={formData.notes}
               onChange={handleChange}
-              className="w-full p-4 rounded-xl bg-gray-900 border border-gray-700 text-white focus:outline-none focus:border-blue-500"
+              className="w-full resize-none rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none transition placeholder:text-gray-500 focus:border-blue-400"
             />
 
             {apiError && (
-              <p className="text-red-400 text-sm mt-2 whitespace-pre-line">{apiError}</p>
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex flex-col gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3"
+              >
+                <p className="text-sm text-red-300">{apiError}</p>
+                <button
+                  type="button"
+                  onClick={submitGuide}
+                  disabled={loading}
+                  className="self-start text-sm font-medium text-red-400 underline transition hover:text-red-300"
+                >
+                  Retry
+                </button>
+              </motion.div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 bg-blue-600 rounded-xl text-white font-semibold ${
-                loading ? "opacity-70 cursor-not-allowed" : ""
-              }`}
+              className="flex w-full items-center justify-center gap-3 rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-6 py-4 font-semibold text-white shadow-lg shadow-blue-500/20 transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-70"
             >
-             {loading ? (
-  <div className="flex items-center justify-center gap-3">
-    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-    <span>AI is analyzing equipment...</span>
-  </div>
-) : (
-  "Generate AI Guide"
-)}
+              {loading ? (
+                <>
+                  <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                  <span>AI is analyzing equipment...</span>
+                </>
+              ) : (
+                <>
+                  <FaMagic />
+                  <span>Generate AI Guide</span>
+                </>
+              )}
             </button>
           </form>
-        </motion.div>
+        </div>
       </div>
     </motion.section>
   );
 };
+
+function FieldError({ message }) {
+  if (!message) {
+    return null;
+  }
+
+  return <p className="text-sm text-red-300">{message}</p>;
+}
 
 export default GeneratorForm;
