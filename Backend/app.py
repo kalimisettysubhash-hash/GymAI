@@ -91,7 +91,7 @@ def generate_guide():
     equipment = str(data.get("equipmentName", "")).strip()
     usage = str(data.get("usageFrequency", "")).strip()
     notes = str(data.get("notes", "")).strip()
-    allowed_usage = {"Light", "Moderate", "Heavy"}
+    allowed_usage = {"Light", "Moderate", "Heavy", "Daily", "3-5 Times Per Week", "Weekly"}
 
     if not customer or not equipment or not usage:
         return jsonify({
@@ -102,7 +102,7 @@ def generate_guide():
     if usage not in allowed_usage:
         return jsonify({
             "success": False,
-            "error": "usageFrequency must be Light, Moderate, or Heavy"
+            "error": "usageFrequency must be Daily, 3-5 Times Per Week, Weekly, Light, Moderate, or Heavy"
         }), 400
 
     try:

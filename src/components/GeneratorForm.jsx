@@ -10,6 +10,17 @@ const initialFormData = {
   notes: "",
 };
 
+const usageFrequencyOptions = [
+  { label: "Daily", apiValue: "Heavy" },
+  { label: "3-5 Times Per Week", apiValue: "Moderate" },
+  { label: "Weekly", apiValue: "Light" },
+];
+
+const usageFrequencyApiMap = usageFrequencyOptions.reduce((map, option) => {
+  map[option.label] = option.apiValue;
+  return map;
+}, {});
+
 const GeneratorForm = ({ onGenerate }) => {
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
@@ -51,10 +62,15 @@ const GeneratorForm = ({ onGenerate }) => {
     setApiError("");
 
     try {
+      const apiPayload = {
+        ...formData,
+        usageFrequency: usageFrequencyApiMap[formData.usageFrequency] || formData.usageFrequency,
+      };
+
       const response = await apiFetch("/generate-guide", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(apiPayload),
       });
 
       const data = await readJsonResponse(response);
@@ -113,9 +129,11 @@ const GeneratorForm = ({ onGenerate }) => {
               className="w-full rounded-xl border border-white/10 bg-black/40 p-4 text-white outline-none transition focus:border-blue-400"
             >
               <option value="">Usage Frequency</option>
-              <option value="Light">Light</option>
-              <option value="Moderate">Moderate</option>
-              <option value="Heavy">Heavy</option>
+              {usageFrequencyOptions.map((option) => (
+                <option key={option.label} value={option.label}>
+                  {option.label}
+                </option>
+              ))}
             </select>
 
             <textarea
@@ -153,7 +171,7 @@ const GeneratorForm = ({ onGenerate }) => {
               {loading ? (
                 <>
                   <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                  <span>AI is analyzing equipment...</span>
+                  <span>AI is generating personalized maintenance recommendations...</span>
                 </>
               ) : (
                 <>
@@ -162,6 +180,8 @@ const GeneratorForm = ({ onGenerate }) => {
                 </>
               )}
             </button>
+
+            {loading && <LoadingPreview />}
           </form>
         </div>
       </div>
@@ -175,6 +195,32 @@ function FieldError({ message }) {
   }
 
   return <p className="text-sm text-red-300">{message}</p>;
+}
+
+function LoadingPreview() {
+  return (
+    <div className="rounded-2xl border border-blue-400/20 bg-blue-500/10 p-5">
+      <div className="mb-5 flex items-center gap-3 text-blue-100">
+        <span className="h-6 w-6 rounded-full border-2 border-blue-200 border-t-transparent animate-spin" />
+        <span className="font-medium">
+          AI is generating personalized maintenance recommendations...
+        </span>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        {[0, 1, 2, 3].map((item) => (
+          <div key={item} className="rounded-xl border border-white/10 bg-black/30 p-4">
+            <div className="mb-4 h-4 w-1/2 animate-pulse rounded-full bg-white/15" />
+            <div className="space-y-3">
+              <div className="h-3 animate-pulse rounded-full bg-white/10" />
+              <div className="h-3 w-5/6 animate-pulse rounded-full bg-white/10" />
+              <div className="h-3 w-2/3 animate-pulse rounded-full bg-white/10" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default GeneratorForm;

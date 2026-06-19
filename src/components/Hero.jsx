@@ -23,12 +23,11 @@ const Hero = () => {
           </div>
 
           <h1 className="max-w-4xl text-5xl font-bold leading-tight text-white md:text-7xl">
-            AI Gym Equipment Maintenance Generator
+            AI Gym Equipment Maintenance Tip Generator
           </h1>
 
           <p className="mt-6 max-w-2xl text-lg leading-8 text-gray-300">
-            Create structured cleaning tips, preventive maintenance steps, safety checks, and
-            service schedules for gym equipment using Google Gemini AI.
+            Generate AI-powered maintenance recommendations to extend gym equipment life.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-4">

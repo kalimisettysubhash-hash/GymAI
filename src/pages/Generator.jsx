@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import GeneratorForm from '../components/GeneratorForm';
 import OutputCard from '../components/OutputCard';
+import {
+  buildMaintenanceSchedule,
+  estimateMaintenanceCost,
+  getMaintenancePriority,
+  getNextMaintenanceDate,
+} from '../utils/maintenance';
 
 const Generator = () => {
   const [guide, setGuide] = useState(null);
@@ -13,13 +19,24 @@ const Generator = () => {
   }, [guide]);
 
   const handleGenerateGuide = (apiGuide, formData) => {
+    const createdAt = new Date();
+    const schedule = buildMaintenanceSchedule(apiGuide);
+    const priority = getMaintenancePriority(formData.usageFrequency);
+    const estimatedCost = estimateMaintenanceCost(formData.usageFrequency);
     const nextGuide = {
       id: crypto.randomUUID(),
-      createdAt: new Date().toISOString(),
-      generatedDate: new Date().toLocaleDateString('en-US', {
+      createdAt: createdAt.toISOString(),
+      generatedDate: createdAt.toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'long',
         year: 'numeric',
+      }),
+      generatedDateTime: createdAt.toLocaleString('en-IN', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
       }),
       customerName: formData.customerName,
       equipmentName: formData.equipmentName,
@@ -29,6 +46,10 @@ const Generator = () => {
       maintenance: apiGuide.maintenance,
       safety: apiGuide.safety,
       service: apiGuide.service,
+      schedule,
+      priority,
+      estimatedCost,
+      nextMaintenanceDate: getNextMaintenanceDate(formData.usageFrequency, createdAt),
     };
 
     setGuide(nextGuide);

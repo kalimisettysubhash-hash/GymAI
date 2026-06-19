@@ -1,21 +1,26 @@
 import { motion } from "framer-motion";
-import { FaCalendarCheck, FaFilePdf, FaRobot } from "react-icons/fa";
+import { FaCalendarCheck, FaChartPie, FaFilePdf, FaRobot } from "react-icons/fa";
 
 const features = [
   {
     icon: <FaRobot />,
-    title: "AI Powered Recommendations",
+    title: "AI Maintenance Tips",
     desc: "Generate practical cleaning, maintenance, safety, and service tasks from equipment details.",
-  },
-  {
-    icon: <FaFilePdf />,
-    title: "PDF Export",
-    desc: "Download a professional maintenance guide that can be shared with staff or clients.",
   },
   {
     icon: <FaCalendarCheck />,
     title: "Maintenance Scheduling",
     desc: "Receive service timing guidance based on light, moderate, or heavy usage patterns.",
+  },
+  {
+    icon: <FaChartPie />,
+    title: "Analytics Dashboard",
+    desc: "Monitor guide volume, priority equipment, ratings, and request trends.",
+  },
+  {
+    icon: <FaFilePdf />,
+    title: "PDF Reports",
+    desc: "Download a professional maintenance guide that can be shared with staff or clients.",
   },
 ];
 
@@ -28,7 +33,7 @@ const Features = () => {
           <h2 className="text-4xl font-bold text-white md:text-5xl">Built for Gym Operations</h2>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-3">
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           {features.map((feature, index) => (
             <FeatureCard key={feature.title} {...feature} index={index} />
           ))}

@@ -1,15 +1,18 @@
+import { lazy, Suspense } from "react";
 import { motion, useScroll } from "framer-motion";
 import { Route, Routes } from "react-router-dom";
 import Footer from "./components/Footer";
 import Navbar from "./components/Navbar";
 import PageWrapper from "./components/PageWrapper";
 import ScrollToHash from "./components/ScrollToHash";
-import About from "./pages/About";
-import Assistant from "./pages/Assistant";
-import Generator from "./pages/Generator";
-import History from "./pages/History";
-import Home from "./pages/Home";
-import NotFound from "./pages/NotFound";
+
+const About = lazy(() => import("./pages/About"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Assistant = lazy(() => import("./pages/Assistant"));
+const Generator = lazy(() => import("./pages/Generator"));
+const History = lazy(() => import("./pages/History"));
+const Home = lazy(() => import("./pages/Home"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 function App() {
   const { scrollYProgress } = useScroll();
@@ -31,17 +34,31 @@ function App() {
       <Navbar />
 
       <PageWrapper>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/generator" element={<Generator />} />
-          <Route path="/assistant" element={<Assistant />} />
-          <Route path="/history" element={<History />} />
-          <Route path="/about" element={<About />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <Suspense fallback={<RouteLoader />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/generator" element={<Generator />} />
+            <Route path="/assistant" element={<Assistant />} />
+            <Route path="/history" element={<History />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/about" element={<About />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </PageWrapper>
 
       <Footer />
+    </div>
+  );
+}
+
+function RouteLoader() {
+  return (
+    <div className="grid min-h-[50vh] place-items-center px-6">
+      <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-blue-100">
+        <span className="h-5 w-5 animate-spin rounded-full border-2 border-blue-200 border-t-transparent" />
+        <span className="font-medium">Loading...</span>
+      </div>
     </div>
   );
 }

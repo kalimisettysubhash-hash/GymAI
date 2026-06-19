@@ -20,7 +20,7 @@ class GenerateGuideTests(unittest.TestCase):
             json={
                 "customerName": "Alex",
                 "equipmentName": "Treadmill",
-                "usageFrequency": "Daily",
+                "usageFrequency": "Hourly",
                 "notes": "Commercial gym",
             },
         )
@@ -35,6 +35,7 @@ class GenerateGuideTests(unittest.TestCase):
             "maintenance": ["Check fasteners monthly."],
             "safety": ["Stop using damaged equipment."],
             "service": ["Arrange service every six months."],
+            "schedule": [{"task": "Clean Surface", "frequency": "Daily"}],
         }
 
         response = self.client.post(
@@ -57,6 +58,7 @@ class GenerateGuideTests(unittest.TestCase):
                     "maintenance": ["Check fasteners monthly."],
                     "safety": ["Stop using damaged equipment."],
                     "service": ["Arrange service every six months."],
+                    "schedule": [{"task": "Clean Surface", "frequency": "Daily"}],
                 },
             },
         )

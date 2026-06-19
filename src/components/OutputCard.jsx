@@ -1,8 +1,26 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { useState } from "react";
-import { FaCheck, FaDownload, FaShieldAlt, FaTools } from "react-icons/fa";
+import {
+  FaCheck,
+  FaDownload,
+  FaRupeeSign,
+  FaShieldAlt,
+  FaStar,
+  FaTools,
+  FaWhatsapp,
+} from "react-icons/fa";
 import { MdCleaningServices, MdEventRepeat } from "react-icons/md";
+import EquipmentImage from "./EquipmentImage";
 import { apiFetch, getApiUrl, readJsonResponse } from "../lib/api";
+import {
+  buildGuideText,
+  buildMaintenanceSchedule,
+  estimateMaintenanceCost,
+  getMaintenancePriority,
+  getNextMaintenanceDate,
+  getStoredRatings,
+  saveGuideRating,
+} from "../utils/maintenance";
 
 const PDF_ENDPOINTS = ["/generate-pdf", "/download-pdf"];
 
@@ -16,6 +34,15 @@ const sections = [
 function OutputCard({ guide, outputRef }) {
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState("");
+  const [ratings, setRatings] = useState(() => getStoredRatings());
+
+  const savedRating = guide ? ratings[guide.id]?.rating : null;
+  const schedule = guide ? buildMaintenanceSchedule(guide) : [];
+  const priority = guide ? guide.priority || getMaintenancePriority(guide.usageFrequency) : null;
+  const estimatedCost = guide ? guide.estimatedCost || estimateMaintenanceCost(guide.usageFrequency) : null;
+  const nextMaintenanceDate = guide
+    ? guide.nextMaintenanceDate || getNextMaintenanceDate(guide.usageFrequency)
+    : "";
 
   const handleDownloadPDF = async () => {
     if (!guide) {
@@ -26,7 +53,13 @@ function OutputCard({ guide, outputRef }) {
       setDownloading(true);
       setDownloadError("");
 
-      const response = await requestPdf(guide);
+      const response = await requestPdf({
+        ...guide,
+        schedule,
+        priority,
+        estimatedCost,
+        nextMaintenanceDate,
+      });
 
       if (!response.ok) {
         const data = await readJsonResponse(response);
@@ -50,6 +83,21 @@ function OutputCard({ guide, outputRef }) {
       setDownloading(false);
     }
   };
+
+  const handleRating = (rating) => {
+    if (!guide || savedRating) {
+      return;
+    }
+
+    const saved = saveGuideRating(guide.id, rating);
+    const nextRatings = { ...ratings, [guide.id]: saved };
+    setRatings(nextRatings);
+    updateHistoryRating(guide.id, rating);
+  };
+
+  const whatsappUrl = guide
+    ? `https://wa.me/?text=${encodeURIComponent(buildGuideText({ ...guide, schedule }))}`
+    : "#";
 
   return (
     <section ref={outputRef} className="px-0 pb-20 pt-10">
@@ -86,22 +134,34 @@ function OutputCard({ guide, outputRef }) {
                 {guide.equipmentName}
               </h2>
               <p className="mt-2 text-gray-400">
-                {guide.usageFrequency} usage | Generated {guide.generatedDate}
+                {guide.usageFrequency} usage | Generated {guide.generatedDateTime || guide.generatedDate}
               </p>
             </div>
 
-            <button
-              onClick={handleDownloadPDF}
-              disabled={downloading}
-              className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {downloading ? (
-                <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-              ) : (
-                <FaDownload />
-              )}
-              <span>{downloading ? "Generating PDF..." : "Download PDF"}</span>
-            </button>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <a
+                href={whatsappUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center justify-center gap-2 rounded-xl border border-green-400/25 bg-green-500/15 px-5 py-3 font-semibold text-green-100 transition hover:bg-green-500/25"
+              >
+                <FaWhatsapp />
+                <span>Share</span>
+              </a>
+
+              <button
+                onClick={handleDownloadPDF}
+                disabled={downloading}
+                className="flex items-center justify-center gap-2 rounded-xl bg-violet-600 px-5 py-3 font-semibold text-white transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {downloading ? (
+                  <span className="h-5 w-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                ) : (
+                  <FaDownload />
+                )}
+                <span>{downloading ? "Generating PDF..." : "Download Maintenance Report"}</span>
+              </button>
+            </div>
           </div>
 
           <AnimatePresence>
@@ -117,6 +177,28 @@ function OutputCard({ guide, outputRef }) {
             )}
           </AnimatePresence>
 
+          <div className="mb-6 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
+            <EquipmentImage equipmentName={guide.equipmentName} />
+
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+              <div className="mb-5 flex flex-wrap items-center gap-3">
+                <span
+                  className={`inline-flex items-center rounded-full border px-4 py-2 text-sm font-semibold ${priority.className}`}
+                >
+                  {priority.label}
+                </span>
+                <span className="rounded-full border border-blue-400/20 bg-blue-500/10 px-4 py-2 text-sm font-semibold text-blue-100">
+                  Next Maintenance: {nextMaintenanceDate}
+                </span>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <MetricCard label="Monthly Cost" value={`₹${estimatedCost.monthly}`} />
+                <MetricCard label="Yearly Cost" value={`₹${estimatedCost.yearly}`} />
+              </div>
+            </div>
+          </div>
+
           <div className="grid gap-6 md:grid-cols-2">
             {sections.map((section, index) => (
               <GuideCard
@@ -128,10 +210,88 @@ function OutputCard({ guide, outputRef }) {
               />
             ))}
           </div>
+
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl">
+            <div className="mb-5 flex items-center gap-3">
+              <span className="grid h-11 w-11 place-items-center rounded-xl bg-blue-500/10 text-xl text-blue-300">
+                <MdEventRepeat />
+              </span>
+              <h3 className="text-xl font-semibold text-white">Maintenance Schedule Table</h3>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[520px] border-separate border-spacing-0 overflow-hidden rounded-xl text-left">
+                <thead>
+                  <tr className="bg-white/10 text-sm uppercase tracking-wide text-gray-300">
+                    <th className="px-4 py-3">Maintenance Task</th>
+                    <th className="px-4 py-3">Frequency</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {schedule.map((item) => (
+                    <tr key={`${item.task}-${item.frequency}`} className="border-t border-white/10 bg-black/25 text-gray-200">
+                      <td className="border-t border-white/10 px-4 py-4">{item.task}</td>
+                      <td className="border-t border-white/10 px-4 py-4">{item.frequency}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl">
+            <p className="mb-4 text-lg font-semibold text-white">Rate this Guide</p>
+            <div className="flex justify-center gap-2">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <button
+                  key={rating}
+                  type="button"
+                  onClick={() => handleRating(rating)}
+                  disabled={Boolean(savedRating)}
+                  className={`text-3xl transition ${
+                    rating <= (savedRating || 0) ? "text-yellow-300" : "text-gray-600 hover:text-yellow-200"
+                  } disabled:cursor-not-allowed`}
+                  aria-label={`Rate guide ${rating} stars`}
+                >
+                  <FaStar />
+                </button>
+              ))}
+            </div>
+
+            {savedRating && (
+              <p className="mt-4 text-sm font-medium text-green-300">
+                Thanks, your {savedRating}-star rating has been saved.
+              </p>
+            )}
+          </div>
         </motion.div>
       )}
     </section>
   );
+}
+
+function MetricCard({ label, value }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-black/30 p-5">
+      <div className="mb-2 flex items-center gap-2 text-blue-300">
+        <FaRupeeSign />
+        <span className="text-sm font-semibold uppercase tracking-wide">{label}</span>
+      </div>
+      <p className="text-3xl font-bold text-white">{value}</p>
+    </div>
+  );
+}
+
+function updateHistoryRating(guideId, rating) {
+  try {
+    const history = JSON.parse(localStorage.getItem("guideHistory") || "[]");
+    const updatedHistory = history.map((item) =>
+      item.id === guideId ? { ...item, rating } : item
+    );
+    localStorage.setItem("guideHistory", JSON.stringify(updatedHistory));
+  } catch (error) {
+    console.error("Error updating guide rating:", error);
+  }
 }
 
 async function requestPdf(guide) {

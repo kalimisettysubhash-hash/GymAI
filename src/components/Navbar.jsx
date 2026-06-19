@@ -8,6 +8,7 @@ const navLinks = [
   { name: "Generator", path: "/generator" },
   { name: "AI Assistant", path: "/assistant" },
   { name: "History", path: "/history" },
+  { name: "Analytics", path: "/analytics" },
   { name: "About", path: "/about" },
 ];
 
